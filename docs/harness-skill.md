@@ -20,18 +20,28 @@ does not give the agent governance authority.
 
 ## Install into a harness
 
-1. Copy the directory into the harness skills path, keeping the directory name:
+Copy the directory into the harness's skills path, keeping the directory name. Every host below
+reads the same `SKILL.md`:
 
-   ```bash
-   cp -R skills/scyvera-governance <harness-skills-dir>/scyvera-governance
-   ```
+| Host | Project path | Global path | Invoke with |
+|---|---|---|---|
+| **Claude Code** | `.claude/skills/scyvera-governance/` | `~/.claude/skills/scyvera-governance/` | `/scyvera-governance` |
+| **Codex** | `.agents/skills/scyvera-governance/` (scanned from the working directory up to the repository root) | `~/.agents/skills/scyvera-governance/` | `$scyvera-governance` |
+| **OpenCode** | `.opencode/skills/scyvera-governance/` (also reads `.agents/skills/` and `.claude/skills/`) | `~/.config/opencode/skills/scyvera-governance/` | `@scyvera-governance` |
+| **Antigravity** | `.agents/skills/scyvera-governance/` | `~/.gemini/config/skills/scyvera-governance/` | `/scyvera-governance` |
 
-   Harnesses that read a project-local skills tree use a path such as
-   `.agents/skills/` or `.claude/skills/`; use whatever your host documents.
-2. Confirm the host discovers `SKILL.md` and its `name` / `description`
-   front-matter.
-3. Make sure `scyvera` is installed and on `PATH` (`scyvera --version`). The
-   skill calls the CLI and the MCP server; it does not bundle a runtime.
+```bash
+git clone --depth 1 https://github.com/Skull-boy/scyvera /tmp/scyvera
+
+cp -R /tmp/scyvera/skills/scyvera-governance .agents/skills/   # Codex, OpenCode, Antigravity
+cp -R /tmp/scyvera/skills/scyvera-governance .claude/skills/    # Claude Code
+```
+
+On Windows, copy the folder by hand. Then:
+
+1. Confirm the host discovers `SKILL.md` and its `name` / `description` front-matter.
+2. Make sure `scyvera` is installed and on `PATH` (`scyvera --version`). The skill calls the CLI
+   and the MCP server; it does not bundle a runtime.
 
 The skill directory is self-contained. It has no network calls, no secrets, no
 `sudo`, and no code that imports the scanned target.

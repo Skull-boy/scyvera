@@ -353,3 +353,41 @@ matching implementation. Divergence between the two is a security bug by
 construction (an action could become declared-but-not-approval-gated), so the
 implementation deliberately couples them; any future split requires an RFC
 amendment and two separate test suites, never two drifting copies.
+
+---
+
+## Current status (2026-11-21)
+
+**Shipped**
+
+- **Agent Contracts v1, v1.1, v1.2**: schemas and field references for identity, capabilities,
+  permissions, constraints, side effects, approvals, dependencies, lifecycle, recovery, replay,
+  observability, and risk. v1.2 adds an optional `guardrails` object (fail-closed, per-window
+  side-effect budgets, per-minute rate limits) as a strict superset of v1.1.
+- **Audit funnel** (`scyvera audit`): deterministic AUxxx scan, band-first Blast Radius report,
+  `--badge`, `--fail-under`, `--generate` drafts, `--pack` Policy Packs.
+- **Conformance** (`scyvera check`): Tier 0 structural superset of `validate` + `lint`; Tier 1
+  static adapters for n8n and LangGraph (`T101`/`T102`/`T103`). Tier 2 fails loudly until its
+  adapter ships.
+- **Traces and evals**: RFC 0003 §C4 JSONL, four-axis eval harness
+  (constraints, approval, recovery, replay), unified report envelope.
+- **Runtime enforcement**: default-deny `ContractEnforcer`, approval boundaries, immutable audit
+  trails, dynamic declarations, post-load integrity checks, v1.2 guardrails.
+- **Identity pinning and registry**: canonical-path pinning, symlink-escape refusal, path-swap
+  detection, hash-chained registry with `verify_chain()` and point-in-time queries.
+- **Re-seal and promotion**: `reseal()` is the only sanctioned regeneration path; RFC 0005
+  promotion is human-only and records a deterministic diff.
+- **Distribution integrity**: `scyvera self-check`, signed manifest, CycloneDX 1.5 SBOM,
+  Sigstore-attested release bundles, PyPI Trusted Publishing (OIDC).
+- **MCP server** (`scyvera serve-mcp`): five tools over stdio, the same engines as the CLI.
+- **Native runtimes**: TypeScript (`@scyvera/scyvera-ts`, npm, OIDC + SLSA provenance) and Rust
+  (`scyvera-rs`, built and CI-gated; **not yet published to crates.io**), both passing the shared
+  33-vector suite at suite-version 1.
+- **Dogfood covenant**: the test suite pins the exact scored surface of `scyvera audit .` at
+  84/100 `Controlled`, including the declared and approved `registry:publish` capability.
+
+**Lane status** (see the GE table above for evidence)
+
+- GE-4/GE-4b: shipped and proven (npm `0.1.1` staged over OIDC, provenance verified).
+- GE-5: built; publication is a maintainer action (`runtimes/rs/PUBLISHING.md`).
+- GE-6 (Rust audit binary): conditional, deferred.

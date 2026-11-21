@@ -127,7 +127,7 @@ New AUxxx rules need:
 1. A registry entry with id, title, severity, and remediation text.
 2. At least one positive fixture under `tests/fixtures/audit/` and one clean case.
 3. A test pinning the finding path and severity, plus the exit-code behavior.
-4. No unreviewed scored findings on this repository: `tests/test_audit_dogfood.py` pins the exact scored set defined by [RFC 0004 Amendment 1](../rfcs/0004-amendment-1-dogfood-declared-capability.md).
+4. No unreviewed scored findings on this repository: `tests/test_audit_dogfood.py` pins the exact scored set defined by [RFC 0004 Amendment 1](./rfcs/0004-amendment-1-dogfood-declared-capability.md).
 
 Do not mark the dogfood test skip or xfail. If a new rule lowers the repository score, fix the rule or the finding, not the gate.
 
@@ -193,7 +193,7 @@ Docs are part of the product. When behavior changes, update the affected page in
 Before opening a pull request, confirm:
 
 - [ ] `pytest tests/ -q` passes locally on at least one OS.
-- [ ] `scyvera audit . --fail-under 84` exits `0` (the dogfood covenant floor, [RFC 0004 Amendment 1](../rfcs/0004-amendment-1-dogfood-declared-capability.md)).
+- [ ] `scyvera audit . --fail-under 84` exits `0` (the dogfood covenant floor, [RFC 0004 Amendment 1](./rfcs/0004-amendment-1-dogfood-declared-capability.md)).
 - [ ] New CLI behavior has tests for `0`, `1`, and `2` exit codes.
 - [ ] Engines print nothing and write nothing to the scanned tree.
 - [ ] Serialized/hashed artifacts are deterministic (sorted, timestamp-free).
@@ -210,13 +210,49 @@ Windows/macOS contributors: 6 symlink tests skip where the OS forbids link creat
 
 ---
 
+## 📁 Repository Layout
+
+```text
+scyvera/
+├── src/scyvera/            # Python governance package (the reference implementation)
+│   ├── audit.py            # Deterministic Blast Radius scan engine + AUxxx rules
+│   ├── enforcer.py         # Default-deny runtime gate, approval boundaries, identity pinning
+│   ├── trace.py            # RFC 0003 §C4 execution trace (canonical JSONL)
+│   ├── evals/              # Four-axis eval harness (constraints, approval, recovery, replay)
+│   ├── registry.py         # Versioned, hash-chained contract registry
+│   ├── reseal.py           # The re-seal ritual
+│   ├── mcp_server.py       # stdio JSON-RPC MCP server (five tools)
+│   └── _self_manifest.json # Signed package-file manifest (self-check)
+├── runtimes/
+│   ├── ts/                 # @scyvera/scyvera-ts (npm): contract model, gate, trace, vectors
+│   └── rs/                 # scyvera-rs (Rust): the same surface, one direct dependency
+├── vectors/                # Shared conformance corpus, suite-version 1 (33 vectors)
+├── schemas/                # JSON Schemas (v1, v1.1, v1.2)
+├── examples/v1.1/          # Validated, domain-neutral example contracts
+├── implementations/        # n8n and LangGraph reference implementations (Tier 1 targets)
+├── packs/                  # Six golden Policy Packs
+├── kits/                   # Per-target adoption kits (n8n, LangGraph)
+├── patterns/               # Reusable contract patterns
+├── docs/                   # Documentation: install, quickstart, API, threat models, roadmap
+├── rfcs/                   # Numbered decision records (RFC 0002–0005)
+├── skills/                 # The scyvera-governance harness skill
+├── tools/                  # Release tooling (self manifest, SBOM, release manifest)
+├── tests/                  # Python suite + fixtures
+└── .github/workflows/      # CI, dogfood, publishing, attestation
+```
+
+`CONTRIBUTING.md` (this file) owns the workflow; [`docs/architecture.md`](./docs/architecture.md)
+owns the layer-by-layer rationale.
+
+---
+
 ## 🧪 Running Things Locally
 
 | Command | What it does |
 |---|---|
 | `pytest tests/ -q` | Full suite. |
 | `pytest tests/test_self_check.py -v` | Package-integrity and CLI exit-code tests. |
-| `pytest tests/test_audit_dogfood.py -v` | Confirms the repository matches the [RFC 0004 Amendment 1](../rfcs/0004-amendment-1-dogfood-declared-capability.md) scored-findings covenant. |
+| `pytest tests/test_audit_dogfood.py -v` | Confirms the repository matches the [RFC 0004 Amendment 1](./rfcs/0004-amendment-1-dogfood-declared-capability.md) scored-findings covenant. |
 | `scyvera audit . --generate /tmp/contract.yaml` | Produces a draft from the repository scan. |
 | `scyvera check <path> --tier 1` | Runs the static adapter for n8n or LangGraph. |
 | `python -m tools.generate_self_manifest` | Regenerates the shipped manifest after `src/scyvera/` edits. |
