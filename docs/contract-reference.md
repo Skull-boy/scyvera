@@ -85,3 +85,20 @@ observability:
 risk:
   level: low                # low | medium | high | critical
 ```
+
+---
+
+## Domain-neutral examples (v1.1)
+
+[`../examples/v1.1/`](../examples/v1.1) holds runnable, validated v1.1 contracts across domains.
+`scyvera audit --generate` produces drafts in the same v1.1 schema, so generated and hand-authored
+contracts share one format.
+
+| Domain | Contract file | Description |
+|---|---|---|
+| **Education** | [`education-tutor.yaml`](../examples/v1.1/education-tutor.yaml) | Guided study tutor, low risk, session state |
+| **Research** | [`research-assistant.yaml`](../examples/v1.1/research-assistant.yaml) | Scientific literature analysis, arXiv API dependency |
+| **Finance** | [`financial-operations.yaml`](../examples/v1.1/financial-operations.yaml) | Critical risk, payment caps ($5000 USD limit), controller approval gate |
+| **Healthcare** | [`clinical-information-assistant.yaml`](../examples/v1.1/clinical-information-assistant.yaml) | High risk, EHR database access, physician approval gate, model integrity requirements |
+| **Business automation** | [`business-automation.yaml`](../examples/v1.1/business-automation.yaml) | Back-office workflow with declared side effects |
+| **Software development** | [`software-development-agent.yaml`](../examples/v1.1/software-development-agent.yaml) | Coding agent with repository and CI boundaries |
