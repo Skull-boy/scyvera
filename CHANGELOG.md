@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — README rebuilt as a landing page; depth moved into `docs/`
+- **784 lines / 5,308 words → 190 lines / 1,067 words.** Nothing was deleted: the reference material moved to pages that own it. The README now answers *what is this, why should I care, how do I run it* in the first screen, and links out for everything else.
+- **New docs pages**: [`docs/quickstart.md`](docs/quickstart.md) (audit → draft → enforce), [`docs/install.md`](docs/install.md) (platforms, `self-check`, signed releases, troubleshooting), [`docs/conformance.md`](docs/conformance.md) (tiers, `T101`–`T103`, eval scoring), [`docs/python-api.md`](docs/python-api.md) (enforcer, gateways, registry, re-seal, builder). The example contracts and the current status moved into [`docs/contract-reference.md`](docs/contract-reference.md) and [`docs/roadmap.md`](docs/roadmap.md); the repository tree moved into [`CONTRIBUTING.md`](CONTRIBUTING.md) and was refreshed to include `runtimes/`, `vectors/`, `kits/`, and `tools/`.
+- **New visuals**: `assets/scyvera-mark.svg` (the existing mark, vectorised — 171 KB instead of 797 KB), `assets/hero-flow.svg` (scan → draft → enforce → prove), and `assets/social-preview.png` (1280×640 repo card). The demo GIF re-encoded from 14 to 7 fps, 3.9 MB → 2.6 MB.
+- **PyPI rendering fixed**: every image now uses an absolute URL; the demo GIF previously used a relative path that 404s on the PyPI project page. Badge count cut from 11 to 6, and the two badges that pointed at removed anchors were re-pointed.
+- **New `ADOPTERS.md`** with an invitation and no invented entries, plus a contributor path through `good first issue`.
+- No runtime, schema, vector, or exit-code change. `scyvera audit . --fail-under 84` is still **84/100 `Controlled`**, and the suite is unchanged.
+
 ### Fixed — `scyvera serve-mcp` is no longer silent when started in a terminal
 - **The command is a stdio JSON-RPC server, so it blocks on stdin by design** — but a human running `scyvera serve-mcp` saw a blank screen and no prompt, which is indistinguishable from a freeze. Nothing was broken: piping frames in (`initialize`, `tools/list`, `tools/call`) always worked.
 - **A terminal stdin now exits `2` with an explicit hint on stderr** instead of waiting forever. The hint names the transport and points at `docs/mcp.md` and `--allow-interactive`. stdout stays clean on refusal, so the "no unprompted stdout bytes" rule is preserved.
