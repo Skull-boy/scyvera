@@ -98,6 +98,7 @@ Target: **240–270 lines, ~1200–1500 words**, of which roughly half is code a
 | 5 | Capabilities | ~25 lines | 9 rows, table or cards: audit, contracts/packs, conformance, enforcer, guardrails, trace+evals, registry, MCP, CI action + skill + kits. Each row: 6–10 words + doc link |
 | 6 | How it works | ~10 lines + diagram | Scan → Draft → Enforce → Prove, with the layer diagram next to it |
 | 7 | Runtimes | ~12 lines | Table: Python (reference, PyPI 1.4.0), TypeScript (npm 0.1.1), Rust (`0.1.0`, source; **not yet published**), each with conformance 33/33 at suite v1 |
+| 7b | Use it from your agent host | ~30 lines | Per-host skill install for Claude Code, Codex, OpenCode, Antigravity + the MCP alternative |
 | 8 | Proof, not promises | ~15 lines | The two pinned numbers (33/33 vectors, 84/100 dogfood covenant), SLSA provenance on the wheel, `self-check` 37 files, CI badge. No drifting test counts |
 | 9 | Honest limits | ~12 lines | Keep the existing "what it does not guarantee" bullets, trimmed to four |
 | 10 | Documentation | ~12 lines | 8 links: install, Python API, conformance, evals, MCP, registry, threat models, roadmap |

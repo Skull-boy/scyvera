@@ -7,7 +7,7 @@
 
 Operational contracts for AI agents: what a system can do, what it can access, and what it must never do — enforced at runtime and provable after the fact.
 
-[![License](https://img.shields.io/github/license/Skull-boy/scyvera)](./LICENSE) [![PyPI](https://img.shields.io/pypi/v/scyvera)](https://pypi.org/project/scyvera/) [![npm](https://img.shields.io/npm/v/@scyvera/scyvera-ts)](https://www.npmjs.com/package/@scyvera/scyvera-ts) [![CI](https://github.com/Skull-boy/scyvera/actions/workflows/validate-contracts.yml/badge.svg)](https://github.com/Skull-boy/scyvera/actions/workflows/validate-contracts.yml) [![Blast Radius](https://img.shields.io/badge/blast%20radius-Controlled-orange)](#proof-not-promises) [![Docs](https://img.shields.io/badge/docs-quickstart-blue)](./docs/quickstart.md)
+[![License](https://img.shields.io/github/license/Skull-boy/scyvera)](./LICENSE) [![PyPI](https://img.shields.io/pypi/v/scyvera)](https://pypi.org/project/scyvera/) [![PyPI Downloads](https://static.pepy.tech/personalized-badge/scyvera?period=total&units=INTERNATIONAL_SYSTEM&left_color=RED&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/scyvera) [![npm](https://img.shields.io/npm/v/@scyvera/scyvera-ts)](https://www.npmjs.com/package/@scyvera/scyvera-ts) [![CI](https://github.com/Skull-boy/scyvera/actions/workflows/validate-contracts.yml/badge.svg)](https://github.com/Skull-boy/scyvera/actions/workflows/validate-contracts.yml) [![Blast Radius](https://img.shields.io/badge/blast%20radius-Controlled-orange)](#proof-not-promises) [![Docs](https://img.shields.io/badge/docs-quickstart-blue)](./docs/quickstart.md)
 </div>
 
 ---
@@ -40,6 +40,16 @@ That high finding is this repository's own npm publish workflow. It stays scored
 declared and approved in `contract.yaml`, and the number records the real cost instead of hiding it
 ([RFC 0004 Amendment 1](./rfcs/0004-amendment-1-dogfood-declared-capability.md)). The scan is
 read-only; it did not change a file.
+
+The **TypeScript runtime** gates the same contract with no install — the contract is the artifact,
+and every runtime reads the same bytes:
+
+```bash
+npx scyvera-ts gate --contract contract.yaml --mode full \
+  --action github:issues:read --action-type permission
+# ALLOWED  github:issues:read
+npx scyvera-ts vectors --root vectors     # 33/33 at suite-version 1
+```
 
 ![Scyvera in 23 seconds: scan, draft, and a blocked action](https://raw.githubusercontent.com/Skull-boy/scyvera/main/assets/scyvera-demo.gif)
 
@@ -131,6 +141,36 @@ One standard, three native implementations. Every one passes the same shared cor
 
 `vectors/` is the acceptance corpus: `suite-version: 1`, 33 vectors across contract-model,
 gate-decision, and trace-roundtrip. A runtime that passes a subset is not conformant.
+
+## Use it from your agent host
+
+[`skills/scyvera-governance/`](./skills/scyvera-governance) is an Agent Skill: it teaches a host to
+run the CLI and the MCP tools and to report their verdicts unchanged. It grants no authority — the
+engines still decide, and a misbehaving agent is caught by the same exit codes.
+
+Copy the folder into the host's skills directory, keeping its name:
+
+| Host | Project path | Global path | Invoke with |
+|---|---|---|---|
+| **Claude Code** | `.claude/skills/` | `~/.claude/skills/` | `/scyvera-governance` |
+| **Codex** | `.agents/skills/` | `~/.agents/skills/` | `$scyvera-governance` |
+| **OpenCode** | `.opencode/skills/` or `.agents/skills/` | `~/.config/opencode/skills/` | `@scyvera-governance` |
+| **Antigravity** | `.agents/skills/` | `~/.gemini/config/skills/` | `/scyvera-governance` |
+
+```bash
+git clone --depth 1 https://github.com/Skull-boy/scyvera /tmp/scyvera
+
+cp -R /tmp/scyvera/skills/scyvera-governance .agents/skills/   # Codex, OpenCode, Antigravity
+cp -R /tmp/scyvera/skills/scyvera-governance .claude/skills/    # Claude Code
+
+pip install scyvera   # the skill drives the CLI; it does not bundle a runtime
+scyvera --version
+```
+
+On Windows, copy the folder by hand. The skill is self-contained (no network, no secrets, no
+`sudo`), hash-locked in `skills-registry.json`, and the same `SKILL.md` works in all four hosts.
+If your host prefers MCP over skills, register `scyvera serve-mcp` instead — the same five tools
+are there ([docs/mcp.md](./docs/mcp.md)).
 
 ## Proof, not promises
 
