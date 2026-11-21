@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 250" width="1120" height="250" role="img" aria-labelledby="flowTitle flowDesc">
+  <title id="flowTitle">The Scyvera loop: scan, draft, enforce, prove</title>
+  <desc id="flowDesc">Four steps. Scan any repository for capabilities, draft a schema-valid contract, enforce it at runtime with default-deny and approvals, and prove what happened with traces and a hash-chained registry.</desc>
+  <defs>
+    <marker id="flowArrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#94A3B8"/>
+    </marker>
+    <filter id="flowShadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.08"/>
+    </filter>
+    <style>
+      .card { fill: #FFFFFF; stroke: #E2E8F0; stroke-width: 1.5; }
+      .num { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; font-weight: 600; letter-spacing: 1.6px; }
+      .title { font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 21px; font-weight: 700; letter-spacing: 0.6px; fill: #0F172A; }
+      .sub { font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 500; fill: #334155; }
+      .detail { font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11.5px; fill: #64748B; }
+      .caption { font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12.5px; fill: #64748B; }
+    </style>
+  </defs>
+
+  <g filter="url(#flowShadow)">
+    <rect class="card" x="15" y="45" width="250" height="135" rx="18"/>
+    <rect class="card" x="300" y="45" width="250" height="135" rx="18"/>
+    <rect class="card" x="585" y="45" width="250" height="135" rx="18"/>
+    <rect class="card" x="870" y="45" width="250" height="135" rx="18"/>
+  </g>
+
+  <g fill="none" stroke="#94A3B8" stroke-width="1.75" stroke-linecap="round">
+    <path d="M 271 112 L 293 112" marker-end="url(#flowArrow)"/>
+    <path d="M 556 112 L 578 112" marker-end="url(#flowArrow)"/>
+    <path d="M 841 112 L 863 112" marker-end="url(#flowArrow)"/>
+  </g>
+
+  <g>
+    <rect x="37" y="68" width="22" height="4" rx="2" fill="#D4A03C"/>
+    <text class="num" x="37" y="91" fill="#D4A03C">01</text>
+    <text class="title" x="37" y="122">SCAN</text>
+    <text class="sub" x="37" y="145">scan any repo</text>
+    <text class="detail" x="37" y="162">deterministic · read-only</text>
+  </g>
+  <g>
+    <rect x="322" y="68" width="22" height="4" rx="2" fill="#94A3B8"/>
+    <text class="num" x="322" y="91" fill="#64748B">02</text>
+    <text class="title" x="322" y="122">DRAFT</text>
+    <text class="sub" x="322" y="145">draft contract.yaml</text>
+    <text class="detail" x="322" y="162">schema-valid v1.1</text>
+  </g>
+  <g>
+    <rect x="607" y="68" width="22" height="4" rx="2" fill="#3B82F6"/>
+    <text class="num" x="607" y="91" fill="#2563EB">03</text>
+    <text class="title" x="607" y="122">ENFORCE</text>
+    <text class="sub" x="607" y="145">enforce at runtime</text>
+    <text class="detail" x="607" y="162">default-deny · approvals</text>
+  </g>
+  <g>
+    <rect x="892" y="68" width="22" height="4" rx="2" fill="#10B981"/>
+    <text class="num" x="892" y="91" fill="#059669">04</text>
+    <text class="title" x="892" y="122">PROVE</text>
+    <text class="sub" x="892" y="145">prove after the fact</text>
+    <text class="detail" x="892" y="162">traces · hash-chained registry</text>
+  </g>
+
+  <text class="caption" x="560" y="222" text-anchor="middle">One contract. Four surfaces. The same semantics in Python, TypeScript, and Rust.</text>
+</svg>
