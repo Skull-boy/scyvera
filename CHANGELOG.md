@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CI — infrastructure cancellations retry themselves; real failures never do
+- **The matrix trim was not enough, and the next runs proved it.** On 2026-11-23 GitHub queued macOS jobs for 15 minutes and then cancelled them before they started (`conclusion: cancelled`, `steps: 0`) in runs #227, #230 and #231. Both `main` and the release PR went red with every executed test green, and only a human clicking "Re-run failed jobs" could clear it.
+- **`.github/workflows/retry-cancelled-jobs.yml` re-runs exactly that failure mode.** It listens for completed runs of the Validate matrix and the nightly macOS matrix, and re-runs the failed jobs only when *every* non-success job was cancelled with zero executed steps. A job that ran and failed gets no retry, no notice, and stays exactly as red as it was. Attempts are capped at three so an unavailable platform cannot loop forever.
+- **The classifier is pinned by a test.** `tests/test_ci_retry_classifier.py` extracts the script from the workflow file itself and covers five cases: acquisition-only → retry; any executed failure → keep; a cancelled job that ran steps → keep; attempt 3 → keep; nothing to do → keep. Editing the YAML without re-checking those cases fails the suite, so the retry can never quietly widen into "retry until green".
+- **Deliberately not retried:** a genuine test failure, an unreachable dependency, a timeout, and a run cancelled by a newer push (`conclusion: cancelled`, not `failure` — that is `concurrency` working as intended).
+
 ### CI — a green PR no longer goes red because GitHub has no macOS runner
 - **Root cause, stated without euphemism:** the macOS arm64 hosted pool is capacity-constrained, and GitHub cancels a job that it cannot place *before it starts* (`steps=0`, annotation *"The job was not acquired by Runner of type hosted … internal server error"*). That cancellation counts as a failure of the run, so a completely green PR reads red. It hit PR #100 (one job) and PR #102 (two jobs).
 - **Two amplifiers removed.** `push` was triggering on `feat/**` *and* `pull_request` was triggering on the same branch, so every push to a feature branch ran the whole matrix twice; it now runs once, on `pull_request`. A `concurrency` group with `cancel-in-progress` on pull requests stops a superseded commit's matrix from competing with the current one for the same runners — main is never cancelled.
