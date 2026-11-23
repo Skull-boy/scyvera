@@ -4,10 +4,17 @@ on:
   push:
     branches:
       - main
-      - "feat/**"
   pull_request:
     branches:
       - main
+
+# A new push to a PR cancels the superseded run for that PR. Without this, two
+# matrices (the old commit's and the new one's) queue for the same hosted
+# runners, and macOS arm64 is the pool that runs out first. Main is never
+# cancelled: every commit on main keeps the result it earned.
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Least privilege: the workflow only reads the repository. No step publishes
 # anything or needs a write-scoped token.
@@ -18,6 +25,7 @@ jobs:
   build-and-test:
     name: Test Package Matrix
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       # One failing OS/Python pair must not cancel the remaining combinations,
       # so a PR shows the full support picture in a single run.
@@ -25,6 +33,25 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        # macOS arm64 hosted runners are the constrained pool. GitHub cancels
+        # these jobs *before they start* ("not acquired by Runner of type
+        # hosted ... internal server error"), which turns a green PR red for a
+        # reason that has nothing to do with the code.
+        #
+        # Interpreter-minor behaviour does not differ between platforms -- a
+        # 3.11-only syntax or stdlib regression shows on Linux and Windows too.
+        # What macOS actually proves is platform behaviour: paths, case
+        # sensitivity, filesystem encoding, process handling. That is a
+        # property of the OS, not the minor version, so macOS runs the floor
+        # and the ceiling, and the five-version sweep stays on the two pools
+        # that have capacity.
+        exclude:
+          - os: macos-latest
+            python-version: "3.11"
+          - os: macos-latest
+            python-version: "3.12"
+          - os: macos-latest
+            python-version: "3.13"
 
     steps:
       - name: Checkout repository

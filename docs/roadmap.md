@@ -141,7 +141,7 @@ the flip). The GEP below is the next program and changes none of these condition
 |---|---|---|
 | **PD-1** | `SECURITY.md` + supported-versions table + coordinated-disclosure route | SECURITY.md present, links from README; report/disclosure path unambiguous |
 | **PD-2** | CI hardening: all workflow actions pinned by commit SHA, least-privilege `permissions:` on every workflow | Zero floating `@latest`/`@vX` action refs; per- workflow minimal token permissions |
-| **PD-3** | Cross-platform test matrix: 3.10–3.14 × linux/windows/macOS | All matrix combinations green on PRs to main |
+| **PD-3** | Cross-platform test matrix: 3.10–3.14 × linux/windows/macOS (this row records the matrix as it stood at closure; macOS was narrowed to the floor and ceiling on 2026-11-23 — see `.github/workflows/validate-contracts.yml`) | All matrix combinations green on PRs to main |
 | **PD-4** | Deserialization pin: tests assert only `yaml.safe_load`/`yaml.safe_load_file` paths exist | no `yaml.load` without explicit unsafe refactor; enforced by test |
 | **PD-5** | Published perf benchmark (synthetic 10k-file repo) | benchmark script + recorded numbers in docs; pre-answers big-repo claims |
 | **PD-6** | Official `scyvera-audit-action` GitHub Action (installs scyvera, runs `audit --fail-under`, respects `--badge`) | Sample consuming repo; action pinned, tagged v1 <br>PD-6 shipped in 1.4.0: `.github/actions/scyvera-gate/action.yml` installs `scyvera>=1.3,<2` (accepts 1.4.0), runs audit/conformance modes, honors `--fail-under` and `--badge`, and is dogfooded on push/pull request. |

@@ -18,8 +18,8 @@ build step.
 |---|---|---|
 | **Windows 10/11** | tested in CI | Narrow-console safe: the report falls back from `—` to `->` on cp437/cp850. Symlink tests skip where the OS denies link creation. |
 | **Linux** | tested in CI | `ubuntu-latest`, all supported Python versions. |
-| **macOS** | tested in CI | `macos-latest`, all supported Python versions. |
-| **Python** | 3.10 – 3.14 | 15-cell matrix: 3 operating systems × 5 Python versions, `fail-fast: false`. |
+| **macOS** | tested in CI | `macos-latest` on Python 3.10 and 3.14 — the OS-specific behaviour is a property of the platform, not the interpreter minor, and the arm64 hosted pool is capacity-constrained. Every other minor is covered on Linux and Windows. |
+| **Python** | 3.10 – 3.14 | 12-cell matrix: 3 operating systems × 5 Python versions, minus the three macOS minors that Linux and Windows already cover, `fail-fast: false`. |
 
 From a checkout instead:
 

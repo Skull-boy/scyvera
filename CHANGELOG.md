@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CI — a green PR no longer goes red because GitHub has no macOS runner
+- **Root cause, stated without euphemism:** the macOS arm64 hosted pool is capacity-constrained, and GitHub cancels a job that it cannot place *before it starts* (`steps=0`, annotation *"The job was not acquired by Runner of type hosted … internal server error"*). That cancellation counts as a failure of the run, so a completely green PR reads red. It hit PR #100 (one job) and PR #102 (two jobs).
+- **Two amplifiers removed.** `push` was triggering on `feat/**` *and* `pull_request` was triggering on the same branch, so every push to a feature branch ran the whole matrix twice; it now runs once, on `pull_request`. A `concurrency` group with `cancel-in-progress` on pull requests stops a superseded commit's matrix from competing with the current one for the same runners — main is never cancelled.
+- **macOS matrix narrowed to the floor and ceiling (3.10, 3.14).** Interpreter-minor behaviour does not differ by platform — a 3.11-only regression shows on Linux and Windows — while what macOS proves is platform behaviour (paths, case sensitivity, encoding, process handling), which is a property of the OS. 15 cells become **12**, and the five-version sweep stays where it has capacity.
+- **No test was skipped or weakened.** The suite, the vectors, `fail-fast: false`, and every cell's assertions are unchanged. `README.md`, `docs/install.md`, and `CONTRIBUTING.md` now state 12 cells instead of 15, and the closed PD-3 row is annotated rather than rewritten.
+
 ### Fixed — a Windows checkout no longer produces different bytes from CI
 - **`* text=auto` → `* text=auto eol=lf`.** The committed blobs were already LF (`git ls-files --eol` reports `i/lf` for all 89 files that were affected), so this pins only the checkout. Under `core.autocrlf=true`, a Windows working tree was rewriting them to CRLF, and nothing noticed because git normalizes on comparison.
 - **What caught it:** `cargo test --locked` failed on `copied_schemas_match_the_python_reference`, which compares the reference schema to the copy the crate ships. The reference was CRLF on disk and the copy was LF, so the bytes differed on Windows only.
