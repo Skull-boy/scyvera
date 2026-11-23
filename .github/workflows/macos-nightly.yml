@@ -1,0 +1,67 @@
+name: macOS matrix (nightly)
+
+# All macOS coverage lives here -- never on the pull-request gate.
+#
+# Measured over the 24 hours to 2026-11-24: macOS hosted jobs succeeded 6 times
+# and were cancelled before starting 5 times (55%), while the 40 Linux and
+# Windows jobs in the same runs succeeded 40 times. GitHub declared no incident,
+# so this is chronic capacity, not a bad afternoon.
+#
+# A merge gate that fails half the time is not a gate: it teaches everyone to
+# press "re-run" and merge anyway, which is exactly how a red check stops
+# meaning anything. So macOS runs the full five-version suite here, nightly and
+# on demand, and never blocks a merge.
+#
+# What macOS proves is platform behaviour -- paths, case-insensitive APFS by
+# default, NFD filenames, symlink and permission semantics -- and none of that
+# needs to be known before a merge. A regression surfaces within a day.
+#
+# `retry-cancelled-jobs.yml` absorbs the acquisition cancellations, because a
+# *scheduled* run being cancelled would otherwise look like a real failure.
+#
+# This is not a badge for its own sake: a red nightly is a real signal and is
+# triaged like any other failure, not waved away as "only the nightly".
+
+on:
+  schedule:
+    # 04:17 UTC daily -- off the hour so it does not queue behind every other
+    # cron in the world.
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never cancel a nightly mid-flight: a half-finished matrix is worse than a
+# queued one. Manual dispatches queue behind each other for the same reason.
+concurrency:
+  group: macos-nightly
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    name: macOS (Python ${{ matrix.python-version }})
+    runs-on: macos-latest
+    timeout-minutes: 30
+    strategy:
+      # One red minor must not hide the other four.
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0 (pinned 2026-11-06)
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0 (pinned 2026-11-06)
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest PyGithub qdrant-client
+
+      - name: Run test suite
+        run: python -m pytest -v

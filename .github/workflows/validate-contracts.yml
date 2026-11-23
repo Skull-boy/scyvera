@@ -8,9 +8,8 @@ on:
     branches:
       - main
 
-# A new push to a PR cancels the superseded run for that PR. Without this, two
-# matrices (the old commit's and the new one's) queue for the same hosted
-# runners, and macOS arm64 is the pool that runs out first. Main is never
+# A new push to a PR cancels the superseded run for that PR, so a stale matrix
+# stops queueing work for a commit nobody is waiting on. Main is never
 # cancelled: every commit on main keeps the result it earned.
 concurrency:
   group: validate-${{ github.workflow }}-${{ github.ref }}
@@ -31,27 +30,20 @@ jobs:
       # so a PR shows the full support picture in a single run.
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        # macOS arm64 hosted runners are the constrained pool. GitHub cancels
-        # these jobs *before they start* ("not acquired by Runner of type
-        # hosted ... internal server error"), which turns a green PR red for a
-        # reason that has nothing to do with the code.
+        # macOS is deliberately NOT here.
         #
-        # Interpreter-minor behaviour does not differ between platforms -- a
-        # 3.11-only syntax or stdlib regression shows on Linux and Windows too.
-        # What macOS actually proves is platform behaviour: paths, case
-        # sensitivity, filesystem encoding, process handling. That is a
-        # property of the OS, not the minor version, so macOS runs the floor
-        # and the ceiling, and the five-version sweep stays on the two pools
-        # that have capacity.
-        exclude:
-          - os: macos-latest
-            python-version: "3.11"
-          - os: macos-latest
-            python-version: "3.12"
-          - os: macos-latest
-            python-version: "3.13"
+        # Measured over the 24 hours to 2026-11-24: macOS hosted jobs succeeded
+        # 6 times and were cancelled before starting 5 times (55%), while the
+        # 40 Linux and Windows jobs in the same runs succeeded 40 times. GitHub
+        # reported no incident, so this is chronic capacity, not an outage.
+        #
+        # A merge gate that fails half the time is not a gate; it teaches people
+        # to click "re-run" and merge anyway. macOS runs the full five-version
+        # suite in `macos-nightly.yml` (nightly and on demand) instead, where a
+        # cancellation costs nobody a merge. The trade is latency: a macOS-only
+        # regression surfaces within a day, not at PR time.
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Checkout repository
