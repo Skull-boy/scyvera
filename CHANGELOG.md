@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Released — `scyvera-rs` `0.1.0` by hand, `0.1.1` through OIDC
+- **`0.1.0` is on crates.io.** Published by the maintainer on 2026-11-23 from commit `f74a585` on a clean tree, with a scoped token that was revoked immediately afterwards. The `.crate` is 54,828 bytes, SHA-256 `412892b72f29beed56ec05b49450ea9a5ca70502f004e73062b145bcf26b9cb3`, and the registry reports the same checksum. The embedded `.cargo_vcs_info.json` records `f74a585` with no dirty flag, the tarball contains no CRLF, and docs.rs built successfully.
+- **What that is worth, stated plainly:** it proves the artifact and its provenance; it does **not** prove the release pipeline. crates.io requires an API token for a crate's first publish, so the bootstrap is a human action by design — the asymmetry `runtimes/rs/PUBLISHING.md` records rather than hides.
+- **`0.1.1` is a no-op version bump released through `publish-scyvera-rs.yml`.** Its only change is `Cargo.toml` and `Cargo.lock`. It exists to exercise the path that will carry every future release: tag/version/suite-pin verification, `cargo test --locked`, `clippy -D warnings`, 33/33 vectors, `cargo package`, attestation, the `crates-io-production` approval, then `crates-io-auth-action` exchanging an OIDC token for a 30-minute publish token. `trustpub_only` is enabled only after that run succeeds.
+- **The digest comparison is the remaining link.** crates.io has no registry-native provenance, so the attestation covers the `.crate` we built. The registry copy is tied to it by matching the downloaded `.crate` SHA-256 against both the run's `sha256sum` line and the registry checksum.
+
 ### Fixed — a Windows checkout no longer produces different bytes from CI
 - **`* text=auto` → `* text=auto eol=lf`.** The committed blobs were already LF (`git ls-files --eol` reports `i/lf` for all 89 files that were affected), so this pins only the checkout. Under `core.autocrlf=true`, a Windows working tree was rewriting them to CRLF, and nothing noticed because git normalizes on comparison.
 - **What caught it:** `cargo test --locked` failed on `copied_schemas_match_the_python_reference`, which compares the reference schema to the copy the crate ships. The reference was CRLF on disk and the copy was LF, so the bytes differed on Windows only.
