@@ -192,12 +192,13 @@ canonical-code mapping instead of a class hierarchy; the contract is an immutabl
 | 4 | Trace: C4 JSONL, fail-closed parse, canonical output | **shipped in this lane** |
 | 5 | Vector runner over all three categories | **shipped in this lane** |
 | 6 | CLI: `validate`, `gate`, `vectors`; `lint`/`check`/`audit` refuse with exit `2` (see §7.1) | **shipped in this lane** |
-| 7 | CI: `.github/workflows/scyvera-rs.yml` with MSRV + stable, suite-drift check | **built, unproven until the PR's CI runs** |
-| 8 | Release path: bootstrap publish, trusted publisher, `trustpub_only`, attested `.crate` | **not started** — requires a human maintainer with a crates.io credential |
+| 7 | CI: `.github/workflows/scyvera-rs.yml` with MSRV + stable, suite-drift check | **proven** — ran on the PR and on `main` (2026-11-21): both toolchains, 11 steps, 0 failures |
+| 8 | Release path: bootstrap publish, trusted publisher, `trustpub_only`, attested `.crate` | **shipped 2026-11-23** — `0.1.0` bootstrap, `0.1.1` through the OIDC workflow (run `45251923718`), `trustpub_only` enabled |
 
 The status column is intentionally blunt: a workflow that has never run is
 **built, not proven**, and this document is not updated to say "published" until
-crates.io serves the crate.
+crates.io serves the crate. Both conditions were met on 2026-11-23 (run
+`45251923718`), so the two rows above now say what the evidence says.
 
 ### 7.1 Deviation from the requested CLI surface
 
@@ -227,8 +228,12 @@ two native runtimes stay comparable.
 - `cargo fmt --all --check` and
   `cargo clippy --all-targets -- -D warnings`: clean.
 - `cargo tree --depth 1`: exactly one direct dependency.
-- Publication: **not done** in this lane. No crate, tag, or attestation is
-  claimed.
+- Publication: **not done in this lane** (2026-11-21). No crate, tag, or
+  attestation was claimed at that point. It was completed afterwards:
+  `0.1.0` by maintainer bootstrap and `0.1.1` through
+  `.github/workflows/publish-scyvera-rs.yml` on 2026-11-23 (run
+  `45251923718`), with `trustpub_only` enabled. See
+  `runtimes/rs/PUBLISHING.md` sections 2 and 3.
 
 ### 7.3 Audit posture
 
