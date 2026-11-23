@@ -11,7 +11,7 @@ Scyvera is a Python package (`scyvera`) plus a specification and a set of refere
 - **Never push directly to `main`.** All changes — new implementations, Python code, docs, schemas — go through a feature branch and a pull request. `main` only receives merges after review.
 - **Canonical naming is `contract.yaml`** — never `contract.yml`. The loader and schema reject `.yml` extensions.
 - **Every implementation declares a contract** — any workflow or agent implementation must include a valid `contract.yaml` alongside its code or workflow definition.
-- **Run the test suite** — all Python tests must pass (`pytest tests/ -v`). The same suite runs across Windows, Linux, and macOS on Python 3.10–3.14.
+- **Run the test suite** — all Python tests must pass (`pytest tests/ -v`). CI runs the same suite on Windows and Linux across Python 3.10–3.14, and on macOS at 3.10 and 3.14 (12 cells per PR; the macOS arm64 hosted pool is capacity-constrained, and platform behaviour does not vary by interpreter minor). macOS 3.11–3.13 run nightly in `macos-extended.yml`, so the full matrix is still covered.
 - **No real credentials, tokens, chat IDs, webhook URLs, or personal data** in anything you commit. Use clear placeholders (`REPLACE_ME`, `YOUR_KEY`, etc.).
 - **Fail closed.** New code paths that cannot verify something must say so and exit non-zero for the CLI; never degrade silently.
 - **No new runtime dependencies** without discussion. The runtime is stdlib + PyYAML + jsonschema; optional adapters live behind extras.
