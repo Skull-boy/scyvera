@@ -137,7 +137,7 @@ One standard, three native implementations. Every one passes the same shared cor
 |---|---|---|---|
 | **Python** (reference) | `pip install scyvera` | `1.4.0` on PyPI | 33/33 |
 | **TypeScript** | `npm install @scyvera/scyvera-ts` | `0.1.1` on npm, OIDC + SLSA provenance | 33/33 |
-| **Rust** | `cargo install scyvera-rs` | `0.1.0` on crates.io (maintainer bootstrap); the OIDC trusted-publish path lands with `0.1.1` | 33/33 |
+| **Rust** | `cargo install scyvera-rs` | `0.1.1` on crates.io — OIDC trusted publishing, human-gated, attested `.crate` | 33/33 |
 
 `vectors/` is the acceptance corpus: `suite-version: 1`, 33 vectors across contract-model,
 gate-decision, and trace-roundtrip. A runtime that passes a subset is not conformant.

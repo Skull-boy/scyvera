@@ -1,8 +1,8 @@
 # Publishing `scyvera-rs`
 
-**Status: `0.1.0` published by the maintainer on 2026-11-23 (bootstrap). The CI
-path is not yet proven; `0.1.1` is the release that proves it.** This document
-is the runbook; it is not evidence of a trusted publish.
+**Status: `0.1.0` (maintainer bootstrap) and `0.1.1` (through the OIDC workflow)
+are published. `trustpub_only` is enabled, so API-token publishes are now refused
+by the registry.** This document is the runbook; the evidence lives in §2 and §3.
 
 Publishing is never automatic on merge. The repository prepares the artifact,
 attests it, and the maintainer approves the release.
@@ -97,6 +97,16 @@ Release procedure:
    runs `cargo test --locked`, `cargo clippy`, the full vector suite,
    `cargo package --locked`, attests the `.crate`, then publishes with the
    short-lived OIDC token.
+
+**Exercised 2026-11-23.** Run `45251923718` released on tag
+`scyvera-rs-v0.1.1` (commit `8979584`) and every step passed: tag/version/suite
+pin, tests, clippy, 33/33 vectors, packaging, attestation, the
+`crates-io-production` approval, the OIDC exchange, and `cargo publish`. The
+registry serves `.crate` sha256
+`818cf035a3346dede6b4806dfb3ae0eba0ab3a4313aa2a63a5831f454624a133`, which
+matches both the download and the registry's reported checksum, and GitHub's
+attestation API returns a Sigstore bundle for that digest. `trustpub_only` was
+enabled afterwards, so the next publish must use this path.
 
 The workflow exits `2` (never a silent pass) if the tag, the suite pin, or the
 package version disagree.

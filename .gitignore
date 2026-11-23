@@ -53,3 +53,6 @@ test.wav
 
 # Rust build output (runtimes/rs)
 /runtimes/rs/target/
+
+# Downloaded registry artifacts kept for digest comparison
+/runtimes/rs/*.crate
