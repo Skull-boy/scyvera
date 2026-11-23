@@ -1,8 +1,8 @@
 # Publishing `scyvera-rs`
 
-**Status: not published yet.** This document is the runbook; it is not evidence
-that a crate exists. The first publish is a human action (see §2), because
-crates.io requires an API token until the crate exists.
+**Status: `0.1.0` published by the maintainer on 2026-11-23 (bootstrap). The CI
+path is not yet proven; `0.1.1` is the release that proves it.** This document
+is the runbook; it is not evidence of a trusted publish.
 
 Publishing is never automatic on merge. The repository prepares the artifact,
 attests it, and the maintainer approves the release.
@@ -20,7 +20,23 @@ attests it, and the maintainer approves the release.
 This is materially different from npm, where the registry hosts SLSA provenance.
 Do not describe the crate as "published with registry provenance".
 
-## 2. Bootstrap publish (human, once)
+## 2. Bootstrap publish (human, once — done 2026-11-23)
+
+**Recorded bootstrap artifact.** `0.1.0` was published from commit `f74a585` on a
+clean tree, with a scoped token that was revoked immediately afterwards:
+
+| Fact | Value |
+|---|---|
+| `.crate` size | 54,828 bytes |
+| `.crate` SHA-256 | `412892b72f29beed56ec05b49450ea9a5ca70502f004e73062b145bcf26b9cb3` |
+| Registry checksum | same value (`/api/v1/crates/scyvera-rs` → `versions[].checksum`) |
+| Embedded `.cargo_vcs_info.json` | `sha1: f74a585…`, no `dirty` flag |
+| Line endings inside the tarball | none CRLF (`.gitattributes` pins LF) |
+| docs.rs | built successfully |
+
+That table is what the bootstrap is worth: a commit, a digest, and a registry
+checksum — not an OIDC exchange. Nothing about it should be described as proven
+through CI.
 
 The crate name must be free at this moment: the 2026-11-21 check returned `404`
 for `https://crates.io/api/v1/crates/scyvera-rs`, but a name is only reserved by
