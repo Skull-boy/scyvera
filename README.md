@@ -179,7 +179,10 @@ are there ([docs/mcp.md](./docs/mcp.md)).
   exact scored surface is asserted; it moves only through an RFC amendment.
 - **Signed installs**: `scyvera self-check` verifies 37 shipped files, and releases carry Sigstore
   build provenance plus a CycloneDX 1.5 SBOM.
-- **Same suite everywhere**: Windows, Linux, and macOS × Python 3.10–3.14, 15 CI cells.
+- **Same suite everywhere**: Windows and Linux on Python 3.10–3.14, macOS on the floor and
+  ceiling (3.10 and 3.14) — 12 cells per PR, `fail-fast: false`. The three macOS minors PRs skip
+  run in a [nightly job](.github/workflows/macos-extended.yml), so the full 15-cell matrix is still
+  covered every day.
 
 ## Honest limits
 
