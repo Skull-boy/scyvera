@@ -1,4 +1,9 @@
-﻿* text=auto
+# LF everywhere, on every platform. The committed blobs are already LF, so this
+# only pins the checkout: a Windows working tree must produce the same bytes as
+# the Linux CI runner. Without it, `core.autocrlf=true` rewrites the Rust
+# sources to CRLF and `cargo package` would ship a .crate that differs from the
+# one CI built and attested (see runtimes/rs/PUBLISHING.md section 4).
+* text=auto eol=lf
 *.py text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf

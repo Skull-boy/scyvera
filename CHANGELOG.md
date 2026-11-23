@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — a Windows checkout no longer produces different bytes from CI
+- **`* text=auto` → `* text=auto eol=lf`.** The committed blobs were already LF (`git ls-files --eol` reports `i/lf` for all 89 files that were affected), so this pins only the checkout. Under `core.autocrlf=true`, a Windows working tree was rewriting them to CRLF, and nothing noticed because git normalizes on comparison.
+- **What caught it:** `cargo test --locked` failed on `copied_schemas_match_the_python_reference`, which compares the reference schema to the copy the crate ships. The reference was CRLF on disk and the copy was LF, so the bytes differed on Windows only.
+- **Why it matters beyond one test:** `cargo package` reads the working tree, so a `.crate` built from a Windows checkout would have shipped CRLF Rust sources while the same commit built on Linux CI ships LF — two artifacts from one commit, which would have made the GE-5 digest comparison (`runtimes/rs/PUBLISHING.md` section 4) compare line endings instead of code.
+- **No content changed:** `git add --renormalize .` reports no blob diff, `scyvera audit .` is still **84/100 `Controlled`**, the suite is still 925 passed / 8 skipped, and `cargo test --locked` is 78 passed.
+
 ### Added — the root contract declares crates.io publishing, ahead of the first Rust release
 - **`contract.yaml` gains a second registry before the side effect exists.** `permissions` still holds one verb (`registry:publish`); `resources` now carries `crates_io_registry` (`type: package_registry`, `access: write`, `scope: "scyvera-rs"`, the same shape GE-4 established for npm), and `side_effects` gains a second `package_publish` on it, marked `irreversible: true`. The existing required approval on `registry:publish` covers both registries, so no second approval was invented to drift out of sync.
 - **`capabilities` adds `publish_native_runtime_package`**, and records the one asymmetry honestly: the bootstrap version is uploaded by the maintainer with a short-lived scoped token because crates.io requires a token until a crate exists; every later version publishes through OIDC. `dependencies` adds `crates_io_api`, and `observability.sinks` adds `crates_io_attestation`.
