@@ -17,7 +17,7 @@ on:
   workflow_run:
     workflows:
       - "Validate Agent Contracts & Package"
-      - "macOS extended matrix"
+      - "macOS matrix (nightly)"
     types: [completed]
 
 permissions:
