@@ -1,0 +1,117 @@
+name: Retry runner-acquisition cancellations
+
+# GitHub queues a job, cannot place it on a hosted runner, and cancels it before
+# it starts ("The job was not acquired by Runner of type hosted ... internal
+# server error"). The cancellation is recorded against the run, so a PR whose
+# every executed test passed still shows red, and it stays red until a human
+# clicks "Re-run failed jobs".
+#
+# That is an infrastructure failure, not a test result, and it is safe to retry.
+# It is NOT safe to paper over: this workflow re-runs only when *every*
+# non-success job was cancelled with zero executed steps. A job that ran and
+# failed is left exactly as red as it was -- no notice, no retry, no hiding.
+#
+# Attempts are capped so a genuinely unavailable platform cannot loop forever.
+
+on:
+  workflow_run:
+    workflows:
+      - "Validate Agent Contracts & Package"
+      - "macOS matrix (nightly)"
+    types: [completed]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  retry:
+    name: Classify and retry
+    # A run cancelled as a whole (for example by a newer push) reports
+    # `cancelled`, not `failure`, and is not ours to resurrect.
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Retry only if no step ever ran
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          MAX_ATTEMPTS: "3"
+          REPORT: /tmp/report.txt
+        run: |
+          set -euo pipefail
+
+          gh api "repos/$REPO/actions/runs/$RUN_ID/jobs?per_page=100" > /tmp/jobs.json
+
+          # The script prints one token on stdout ("retry" or "keep: reason")
+          # and the human-readable report to /tmp/report.txt, so the decision is
+          # never contaminated by diagnostics.
+          decision=$(python3 - /tmp/jobs.json <<'PY'
+          import json
+          import os
+          import sys
+
+          payload = json.load(open(sys.argv[1], encoding="utf-8"))
+          non_success = [
+              job
+              for job in payload.get("jobs", [])
+              if job.get("conclusion") not in ("success", "skipped")
+          ]
+          report = [
+              f"- {job.get('name')}: {job.get('conclusion')}, "
+              f"steps={len(job.get('steps') or [])}"
+              for job in non_success
+          ]
+
+          def finish(token: str) -> None:
+              with open(os.environ.get("REPORT", "/tmp/report.txt"), "w", encoding="utf-8") as handle:
+                  handle.write("\n".join(report) + "\n")
+              print(token)
+              raise SystemExit(0)
+
+          if not non_success:
+              finish("keep: no non-success jobs")
+
+          # An acquisition cancellation is a cancelled job that never ran a
+          # step. Anything else is a result a human must see.
+          acquisition = [
+              job
+              for job in non_success
+              if job.get("conclusion") == "cancelled"
+              and len(job.get("steps") or []) == 0
+          ]
+
+          if len(acquisition) != len(non_success):
+              finish("keep: at least one job executed steps and failed")
+
+          attempt = int(os.environ.get("ATTEMPT", "1"))
+          max_attempts = int(os.environ.get("MAX_ATTEMPTS", "3"))
+          if attempt >= max_attempts:
+              finish(f"keep: runner acquisition failed {attempt} times")
+
+          finish("retry")
+          PY
+          )
+
+          {
+            echo "### Runner-acquisition check"
+            echo '```'
+            cat "$REPORT"
+            echo '```'
+            echo "**Decision:** \`$decision\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          case "$decision" in
+            retry)
+              gh api -X POST "repos/$REPO/actions/runs/$RUN_ID/rerun-failed-jobs" > /dev/null
+              echo "::notice::Re-ran the acquisition-cancelled jobs of $RUN_URL (attempt $ATTEMPT of $MAX_ATTEMPTS)."
+              ;;
+            *)
+              echo "::notice::Not retrying $RUN_URL -- $decision"
+              ;;
+          esac

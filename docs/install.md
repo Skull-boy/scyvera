@@ -18,8 +18,8 @@ build step.
 |---|---|---|
 | **Windows 10/11** | tested in CI | Narrow-console safe: the report falls back from `—` to `->` on cp437/cp850. Symlink tests skip where the OS denies link creation. |
 | **Linux** | tested in CI | `ubuntu-latest`, all supported Python versions. |
-| **macOS** | tested in CI | `macos-latest` on Python 3.10 and 3.14 on every PR — the OS-specific behaviour (paths, default case-insensitive APFS, NFD filenames, symlinks) is a property of the platform, not the interpreter minor, and the arm64 hosted pool is capacity-constrained. Minors 3.11–3.13 run in the nightly `macos-extended.yml`, so every supported version is covered on macOS. |
-| **Python** | 3.10 – 3.14 | 12 cells per pull request (3 operating systems × 5 Python versions, minus the three macOS minors that Linux and Windows already cover) with `fail-fast: false`. The nightly macOS job runs those three, so the full 15 cells are covered daily. |
+| **macOS** | tested nightly in CI | `macos-latest`, **all supported Python versions**, in `macos-nightly.yml` (daily and on demand). Not part of the pull-request gate: over the 24 hours to 2026-11-24 those runners succeeded 6 times and were cancelled before starting 5 times, with no GitHub incident declared. A macOS-only regression surfaces within a day instead of blocking a merge. |
+| **Python** | 3.10 – 3.14 | 10 cells gate every pull request (Linux and Windows × 5 versions, `fail-fast: false`); the five macOS cells run nightly. The union is the full 15-cell matrix. |
 
 From a checkout instead:
 

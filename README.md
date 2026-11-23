@@ -179,10 +179,11 @@ are there ([docs/mcp.md](./docs/mcp.md)).
   exact scored surface is asserted; it moves only through an RFC amendment.
 - **Signed installs**: `scyvera self-check` verifies 37 shipped files, and releases carry Sigstore
   build provenance plus a CycloneDX 1.5 SBOM.
-- **Same suite everywhere**: Windows and Linux on Python 3.10–3.14, macOS on the floor and
-  ceiling (3.10 and 3.14) — 12 cells per PR, `fail-fast: false`. The three macOS minors PRs skip
-  run in a [nightly job](.github/workflows/macos-extended.yml), so the full 15-cell matrix is still
-  covered every day.
+- **Same suite everywhere**: Linux and Windows on Python 3.10–3.14 gate every pull request (10
+  cells, `fail-fast: false`); macOS runs all five versions in a
+  [nightly job](.github/workflows/macos-nightly.yml). macOS is not on the merge gate because its
+  hosted runners were failing ~45% of the time (measured 2026-11-24) — a gate that random is not a
+  gate. The two sets together are still the full 15-cell matrix.
 
 ## Honest limits
 
