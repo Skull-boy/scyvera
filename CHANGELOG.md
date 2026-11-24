@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — governed findings (M4.4): 92/100 Shielded with raw 82/100 Controlled
+- **A finding can now be governed instead of only scored.** When the scanned tree's root
+  `contract.yaml` validates, is not provisional, declares the permission the finding's own
+  remediation prescribes, and approves it with `required: true` and a named approver, the finding is
+  **rendered but excluded from the governed score**. Anything else — no contract, unreadable,
+  invalid, provisional, wildcard, undeclared, unapproved, `required: false`, nameless approver —
+  leaves the finding scored. Fail closed, never open. Recorded in
+  [RFC 0004 Amendment 2](rfcs/0004-amendment-2-governed-findings.md).
+- **This is a product behaviour change for every user who declares and approves a capability.** A
+  repository that already has such a contract will see its score rise and its band possibly change
+  with no code change. That is intended, which is why every contract-bearing report now shows two
+  numbers: `score`/`band` (what `--fail-under` gates on) and `raw_score`/`raw_band` (what every
+  non-quarantined finding would score). The raw number is the reviewer's escape hatch.
+- **`AU-CI-002` now recognizes `cargo publish`.** The matcher previously saw only npm, twine, docker,
+  and kubectl. Adding cargo measures a second real surface instead of leaving it invisible; the
+  rule's severity and weight are unchanged, and no rule was deleted. `cargo build`, `cargo package`,
+  `cargo test`, `cargo yank`, comments, and non-workflow files do not match (pinned tests).
+  Decision recorded: `cargo yank` is a metadata mutation, not an artifact upload, and is not matched
+  in this lane.
+- **The repository's own numbers move in both directions, honestly.** Governed score **84 → 92**
+  (`Controlled` → `Shielded`) because the npm and crates.io workflows are declared and approved; raw
+  score **84 → 82** because cargo publish is now measured at all. Two more surfaces are measured,
+  both are governed by an approval a test proves is load-bearing, and nothing was hidden.
+- **Report contract (additive, `report_version: 1`).** Per finding: `scoring_reason`
+  (`scored`/`quarantined`/`governed`) and `governed_by` (`{permission, approval_action,
+  contract_path}` or `null`). Per report: `raw_score`, `raw_band`, `raw_load`, `governed_count`.
+  These fields appear **only when the target has a governing contract**, so a tree with no
+  `contract.yaml` serializes byte-identically to before (pinned golden test). The unified envelope
+  carries `raw_score`, `raw_band`, and `governed_findings` under `summary`, and the report schema
+  documents them.
+- **Terminal output** shows `Blast Radius: 92/100 (Shielded)` and, on the next line,
+  `raw (all findings): 82/100 (Controlled)`, plus a `GOVERNED` row per governed finding that names
+  the permission and the contract. Governed findings are never hidden or filtered.
+- **Trust-surface ledger.** New `docs/trust-surfaces.yaml` enumerates npm publish, crates.io publish,
+  the PyPI publish gap, the `scyvera-gate` Action, the MCP server, the harness skill, and
+  `self-check`, each with capability, resource, trigger, credential, approval, evidence, and status.
+  `tests/test_trust_surfaces.py` proves every publish command the audit matcher finds under
+  `.github/workflows/**` has exactly one entry, every governed approval-bearing entry is backed by
+  the contract, and the gap set is pinned. **PyPI is a pinned gap**: the `pypi` environment has no
+  protection rules and `pypi_registry` is not declared. It is not fixed here (roadmap M4.5).
+- **Dogfood covenant re-pinned**: scored set = the six demo findings, governed set = the two
+  `AU-CI-002` publish workflows, score **92**, band **Shielded**, raw **82**, governance `governed`.
+  Deleting the approval re-scores both capabilities (pinned test).
+- No rule severity or weight change; no wildcard permission; exit codes remain `0`/`1`/`2`;
+  `vectors/`, `runtimes/ts/**`, and `runtimes/rs/**` untouched.
+
 ### Released — `scyvera-rs` `0.1.1` through OIDC, `0.1.0` by hand
 - **`0.1.0` (bootstrap, maintainer-owned).** Published 2026-11-23 from commit `f74a585` on a clean tree with a scoped token that was revoked immediately afterwards. `.crate` 54,828 bytes, SHA-256 `412892b72f29beed56ec05b49450ea9a5ca70502f004e73062b145bcf26b9cb3`, the registry reports the same checksum, `.cargo_vcs_info.json` records `f74a585` with no dirty flag, the tarball contains no CRLF, and docs.rs built. It proves the artifact; it does not prove the pipeline, because crates.io requires a token until a crate exists.
 - **`0.1.1` (the pipeline, proven).** No code change. Released through `.github/workflows/publish-scyvera-rs.yml` on tag `scyvera-rs-v0.1.1` (commit `8979584`), paused at the `crates-io-production` environment for human approval, authenticated with a 30-minute OIDC token via `rust-lang/crates-io-auth-action`, and published with `cargo publish --locked` — run `45251923718`, every step green.

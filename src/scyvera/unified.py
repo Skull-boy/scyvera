@@ -504,6 +504,29 @@ def from_audit_report(
         for entry in findings
         if not (isinstance(entry, Mapping) and entry.get("scored") is False)
     )
+    # RFC 0004 Amendment 2: a governed finding is also ``scored: false``, but it
+    # is not quarantined. Count by reason when the payload carries one, and fall
+    # back to the pre-amendment arithmetic for older payloads.
+    has_reasons = any(
+        isinstance(entry, Mapping) and "scoring_reason" in entry
+        for entry in findings
+    )
+    if has_reasons:
+        quarantined = sum(
+            1
+            for entry in findings
+            if isinstance(entry, Mapping)
+            and entry.get("scoring_reason") == "quarantined"
+        )
+        governed = sum(
+            1
+            for entry in findings
+            if isinstance(entry, Mapping)
+            and entry.get("scoring_reason") == "governed"
+        )
+    else:
+        quarantined = len(findings) - scored
+        governed = 0
     summary = {
         "score": data.get("score"),
         "band": data.get("band"),
@@ -512,8 +535,12 @@ def from_audit_report(
         "findings": dict(stats.get("findings") or {}),
         "draft_available": bool(data.get("draft_available", False)),
         "scored_findings": scored,
-        "quarantined_findings": len(findings) - scored,
+        "quarantined_findings": quarantined,
     }
+    if "raw_score" in data:
+        summary["raw_score"] = data.get("raw_score")
+        summary["raw_band"] = data.get("raw_band")
+        summary["governed_findings"] = governed
     if governance is not None:
         summary["governance"] = {
             "status": str(governance.get("status", "ungoverned")),

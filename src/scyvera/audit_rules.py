@@ -29,6 +29,10 @@ class Finding:
 
     ``scored`` is the M2.0a.1 quarantine marker: fixture findings remain in
     the report but contribute nothing to score, band, or scored stats.
+    ``scoring_reason`` names why (``scored``, ``quarantined``, or ``governed``,
+    RFC 0004 Amendment 2) and ``governed_by`` carries the contract evidence
+    when a declared-and-approved capability exempts the finding from the
+    governed score.
     """
 
     rule_id: str
@@ -39,6 +43,8 @@ class Finding:
     line: int | None
     suggestion: Mapping[str, Any]
     scored: bool = True
+    scoring_reason: str = "scored"
+    governed_by: Mapping[str, str] | None = None
 
 
 @dataclass(frozen=True)
@@ -52,6 +58,28 @@ class AuditRule:
 
     def __call__(self, path: str, text: str, filename: str) -> list[Finding]:
         return self.scan(path, text, filename)
+
+
+@dataclass(frozen=True)
+class CapabilityPrescription:
+    """The capability a finding's remediation already asks the user to declare.
+
+    RFC 0004 Amendment 2 governs a finding only when the scanned tree's
+    contract declares ``permission`` and approves it. ``resources`` maps the
+    command token that triggered the finding to the contract resource it
+    writes to; it is used by the trust-surface ledger, never by the scoring
+    test (which is deliberately permission-based, not resource-based).
+    """
+
+    permission: str
+    resources: Mapping[str, str]
+
+    def resource_for(self, command: str) -> str | None:
+        lowered = command.lower()
+        for token in sorted(self.resources, key=len, reverse=True):
+            if token in lowered:
+                return self.resources[token]
+        return None
 
 
 _Matcher = Callable[
@@ -455,7 +483,7 @@ _SECRET_REF_RE = re.compile(r"\bsecrets\.[A-Za-z0-9_]+")
 # registry's staging area and only defers the 2FA approval, so it must keep
 # raising AU-CI-002 rather than slipping past the rule.
 _CI_PUBLISH_RE = re.compile(
-    r"\b(?:npm\s+(?:stage\s+)?publish|twine\s+upload|docker\s+push|"
+    r"\b(?:npm\s+(?:stage\s+)?publish|cargo\s+publish|twine\s+upload|docker\s+push|"
     r"kubectl\s+apply)\b",
     re.IGNORECASE,
 )
@@ -1352,3 +1380,32 @@ RULES: list[AuditRule] = [
         _match_source_secret,
     ),
 ]
+
+#: Rule-level capability prescriptions (RFC 0004 Amendment 2).
+#:
+#: A finding can be governed only when its rule prescribes a permission the
+#: scanned tree's contract can declare *and* approve. Rules absent here are
+#: deliberately **permanently scored**: an undeclared egress path, an unmanaged
+#: n8n write, or a leaked secret is not something an approval can legitimise.
+#: Recording that as ``None`` (rather than an empty list) keeps "nothing
+#: required" distinguishable from "no prescription exists".
+_PRESCRIBED: Mapping[str, CapabilityPrescription] = {
+    "AU-CI-002": CapabilityPrescription(
+        permission="registry:publish",
+        resources={
+            "npm stage publish": "npm_registry",
+            "npm publish": "npm_registry",
+            "cargo publish": "crates_io_registry",
+        },
+    ),
+}
+
+#: One entry per registry rule, including the explicit ``None`` entries.
+RULE_PRESCRIPTIONS: Mapping[str, CapabilityPrescription | None] = {
+    rule.rule_id: _PRESCRIBED.get(rule.rule_id) for rule in RULES
+}
+
+
+def prescription_for(rule_id: str) -> CapabilityPrescription | None:
+    """Return the rule's prescription, or ``None`` when it is permanently scored."""
+    return RULE_PRESCRIPTIONS.get(rule_id)

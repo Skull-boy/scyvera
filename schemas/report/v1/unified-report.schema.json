@@ -57,6 +57,7 @@
             "status": {
               "enum": [
                 "governed",
+                "provisional",
                 "ungoverned"
               ]
             },
@@ -67,6 +68,23 @@
               ]
             }
           }
+        },
+        "raw_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "raw_band": {
+          "enum": [
+            "Shielded",
+            "Controlled",
+            "Exposed",
+            "Unbounded"
+          ]
+        },
+        "governed_findings": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },

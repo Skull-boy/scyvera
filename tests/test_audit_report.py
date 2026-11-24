@@ -502,19 +502,19 @@ def test_dogfood_gate_is_controlled(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    # RFC 0004 Amendment 1: the covenant floor is 84/100 Controlled because the
-    # npm publish workflow's AU-CI-002 is declared and approved, not hidden.
+    # RFC 0004 Amendment 2: the covenant floor is 92/100 Shielded because the
+    # npm and crates.io publish workflows are declared and approved, not hidden.
     code, out, _ = _run_cli(
         monkeypatch,
         capsys,
         "audit",
         str(ROOT),
         "--fail-under",
-        "84",
+        "92",
     )
 
-    assert code == 0, f"expected exit 0 under --fail-under 84, got {code}"
-    assert "Blast Radius: 84/100 (Controlled)" in out, (
+    assert code == 0, f"expected exit 0 under --fail-under 92, got {code}"
+    assert "Blast Radius: 92/100 (Shielded)" in out, (
         f"dogfood report drifted: {out!r}"
     )
 

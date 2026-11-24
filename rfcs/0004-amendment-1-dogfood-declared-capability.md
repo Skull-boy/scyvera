@@ -82,3 +82,14 @@ finding that the repository's own contract declares and approves. That is a prod
 `scyvera.audit` (not a rule change), and it is recorded on the roadmap as *audit honors declared and
 approved capabilities (governed findings)*. Until that ships, 84/100 `Controlled` is the correct
 number and the covenant above is the correct gate.
+
+---
+
+## 6. Amendment 2 shipped (2026-11-24)
+
+[Amendment 2](./0004-amendment-2-governed-findings.md) implements the follow-up
+above. The covenant is now **92/100 `Shielded`** with **raw 82/100 `Controlled`**:
+both publish workflows (npm and crates.io) are measured, and both are governed by
+the root contract's declared permission and required approval. The raw score is
+always reported, so the two findings remain visible.
+

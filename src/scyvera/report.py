@@ -157,6 +157,49 @@ def _finding_rows(scored: list[Finding]) -> list[str]:
     return rows
 
 
+def _governed_rows(governed: list[Finding]) -> list[str]:
+    """Render governed findings: visible, distinct, and evidenced.
+
+    A governed finding is not a hidden finding. It keeps its severity and rule
+    id, and the row names the permission and contract that exempted it from the
+    governed score (RFC 0004 Amendment 2).
+    """
+    ordered = sorted(
+        governed,
+        key=lambda finding: (
+            _SEVERITY_RANK.get(finding.severity, len(_SEVERITY_RANK)),
+            finding.rule_id,
+            finding.path,
+            finding.line if finding.line is not None else 0,
+        ),
+    )
+
+    groups: dict[tuple[str, str], list[Finding]] = {}
+    for finding in ordered:
+        groups.setdefault((finding.rule_id, finding.title), []).append(finding)
+
+    rows: list[str] = []
+    for (rule_id, title), group in groups.items():
+        severity = group[0].severity.upper()
+        rows.append(f"{_INDENT}{'GOVERNED':<{_SEVERITY_WIDTH}}  [{rule_id}] {title}")
+
+        first = group[0]
+        location = first.path
+        if first.line is not None:
+            location += f":{first.line}"
+        if len(group) > 1:
+            location += f" + {len(group) - 1} more"
+        rows.append(f"{_DETAIL_INDENT}{location}")
+
+        evidence = first.governed_by or {}
+        rows.append(
+            f"{_DETAIL_INDENT}{evidence.get('permission', '?')} declared and "
+            f"approved in {evidence.get('contract_path', 'contract.yaml')}"
+        )
+
+    return rows
+
+
 def render_report(
     report: AuditReport,
     *,
@@ -180,12 +223,23 @@ def render_report(
     provisional = report.governance == "provisional"
     marker = " [ungoverned]" if ungoverned else (" [provisional]" if provisional else "")
 
+    governed = [finding for finding in report.findings if finding.scoring_reason == "governed"]
+
     if not scored:
         lines = [
             f"PASS  {report.target} {dash} exploit risk none "
             f"(score {report.score}/100)"
             + marker
         ]
+        if report.contract_path is not None:
+            raw_score = report.raw_score if report.raw_score is not None else report.score
+            raw_band = report.raw_band or report.band
+            lines.append(
+                f"{_INDENT}raw (all findings): {raw_score}/100 ({raw_band})"
+            )
+        if governed:
+            lines.append("")
+            lines.extend(_governed_rows(governed))
         if ungoverned:
             # One honest next step, not a claim of safety: the audit measures
             # blast radius only, and declaring bounds is a separate action.
@@ -214,13 +268,27 @@ def render_report(
         else "WARN"
     )
 
+    raw_line: list[str] = []
+    if report.contract_path is not None:
+        raw_score = report.raw_score if report.raw_score is not None else report.score
+        raw_band = report.raw_band or report.band
+        raw_line.append(
+            f"{_INDENT}raw (all findings): {raw_score}/100 ({raw_band})"
+        )
+
+    governed_rows: list[str] = []
+    if governed:
+        governed_rows = ["", *_governed_rows(governed)]
+
     lines = [
         f"{status}  {report.target}"
         + marker,
         f"{_INDENT}Blast Radius: {report.score}/100 ({report.band})",
+        *raw_line,
         _scanned_line(report),
         "",
         *_finding_rows(scored),
+        *governed_rows,
         "",
         f"{_INDENT}With a contract: force-push -> requires approval; "
         ".env -> unread;",
