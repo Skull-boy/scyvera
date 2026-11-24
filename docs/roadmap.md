@@ -174,7 +174,20 @@ Distribution reach = M3.1 + M3.2 + PD-6 + PD-7.
 | **M4.1** | **Sliding-window invocation throttling** (from `threat-model-lifecycle.md` T1 and RFC 0002) — real burst detection inside `ContractEnforcer` for `lifecycle.busy`/downgrade attacks | Upgrade from warning to detectable ContractViolationError with preserved audit trail |
 | **M4.2** | **Asynchronous approval channels** — pluggable `ApprovalChannel` interface (Telegram, Slack, Email, Webhook), implementing the existing `ApprovalPendingError` handling path | Current synchronous behavior remains the default; async channels opt-in |
 | **M4.3** | **Multi-agent contract negotiation** — handshake protocol verifying contracts during agent-to-agent delegation (links to future `agent_to_agent` lifecycle field, pre-declared in RFC 0002 §4) | Handshake makes delegation fail-closed when the receiving agent's contract doesn't authorize the delegator's request |
-| **M4.4** | **Audit honors declared and approved capabilities (governed findings)** — when the scanned tree's `contract.yaml` declares the permission and the required approval that AUxxx finding metadata prescribes, render the finding but do not score it: governed, not waived. Undeclared or unapproved capabilities stay scored. | Removing the approval re-scores the finding (pinned test); `audit` and `--unified` show the declared capability; no rule severity or weight changes; this is the follow-up that can restore `Shielded` without hiding the finding (RFC 0004 Amendment 1 §5) |
+| **M4.4** | **Shipped-on 2026-11-24 on `feat/m44-governed-findings`.** **Audit honors declared and approved capabilities (governed findings)** - when the scanned tree's root `contract.yaml` validates, is not provisional, declares the permission an AUxxx finding prescribes, and approves it with `required: true` and a named approver, the finding is rendered but excluded from the governed score. Undeclared or unapproved capabilities stay scored. Recorded in [RFC 0004 Amendment 2](../rfcs/0004-amendment-2-governed-findings.md). | Removing the approval re-scores the finding (pinned test, both capabilities); every report shows `score` **and** `raw_score`; governed findings keep `scoring_reason`/`governed_by`; no rule severity or weight changes. Dogfood: **92/100 `Shielded`**, raw **82/100 `Controlled`**, scored set = the six demo findings, governed set = the two `AU-CI-002` publish workflows |
+| **M4.5** | **Declare and gate the PyPI publish surface** - `publish-pypi.yml` runs on a `v*` tag with the `pypi` environment, but that environment has no required reviewer and the `pypi_registry` resource is not in the root contract. Recorded as the only pinned `gap` in [`trust-surfaces.yaml`](./trust-surfaces.yaml); deliberately not fixed in the M4.4 lane. | `pypi_registry` declared in `contract.yaml` with the same `registry:publish` approval, the environment requires a reviewer, the ledger entry flips to `governed`, and `PINNED_GAPS` in `tests/test_trust_surfaces.py` becomes empty |
+
+---
+
+### Trust-surface ledger
+
+`docs/trust-surfaces.yaml` enumerates every surface that can affect the outside
+world: npm publish, crates.io publish, the PyPI gap, the `scyvera-gate` Action,
+the MCP server, the harness skill, and `self-check`.
+`tests/test_trust_surfaces.py` proves three things: every publish command the audit
+matcher finds under `.github/workflows/**` resolves to exactly one entry; every
+governed, approval-bearing entry's capability is declared with a required approval
+in the root contract; and the set of gaps is pinned (`{"pypi-publish"}` today).
 
 ---
 
@@ -384,8 +397,13 @@ amendment and two separate test suites, never two drifting copies.
   (`scyvera-rs`, `0.1.0` on crates.io by maintainer bootstrap; the OIDC path is unproven until
   `0.1.1`), both passing the shared
   33-vector suite at suite-version 1.
-- **Dogfood covenant**: the test suite pins the exact scored surface of `scyvera audit .` at
-  84/100 `Controlled`, including the declared and approved `registry:publish` capability.
+- **Dogfood covenant**: the test suite pins the exact scored and governed surfaces of
+  `scyvera audit .` at **92/100 `Shielded`** with **raw 82/100 `Controlled`**: the two `AU-CI-002`
+  publish workflows are governed by the declared and approved `registry:publish` capability, and
+  the six demo findings stay scored (RFC 0004 Amendment 2).
+- **Trust-surface ledger**: `docs/trust-surfaces.yaml` records npm, crates.io, the PyPI gap, the
+  Action, MCP, the skill, and `self-check`; `tests/test_trust_surfaces.py` pins coverage, authority,
+  and the gap set.
 
 **Lane status** (see the GE table above for evidence)
 

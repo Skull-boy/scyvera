@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, Mapping
 import yaml
 
 from .audit_rules import RULES, SEVERITY_WEIGHTS, Finding
+from .governance import resolve_governed
 
 if TYPE_CHECKING:  # pragma: no cover - typing only, avoids import cycles
     from .unified import UnifiedReport
@@ -220,10 +221,26 @@ class AuditReport:
         default_factory=lambda: MappingProxyType({})
     )
     governance: str = "governed"
+    #: RFC 0004 Amendment 2. ``contract_path`` is the scan-relative path of the
+    #: contract that governed at least one finding attempt (root-only); it is
+    #: the switch that makes the additive report fields appear, so a tree with
+    #: no contract keeps byte-identical output.
+    contract_path: str | None = None
+    raw_score: int | None = None
+    raw_band: str | None = None
+    raw_load: float | None = None
+    governed_count: int = 0
 
     def to_dict(self) -> dict[str, Any]:
-        findings = [
-            {
+        # RFC 0004 Amendment 2 adds per-finding evidence and the raw numbers,
+        # but only on a scan that actually has a governing contract: a tree with
+        # no contract.yaml must serialize byte-identically to the pre-amendment
+        # engine (pinned by tests/test_audit_governed.py).
+        governed_fields = self.contract_path is not None
+
+        findings = []
+        for finding in self.findings:
+            payload: dict[str, Any] = {
                 "rule_id": finding.rule_id,
                 "severity": finding.severity,
                 "title": finding.title,
@@ -233,10 +250,14 @@ class AuditReport:
                 "suggestion": dict(finding.suggestion),
                 "scored": finding.scored,
             }
-            for finding in self.findings
-        ]
+            if governed_fields:
+                payload["scoring_reason"] = finding.scoring_reason
+                payload["governed_by"] = (
+                    dict(finding.governed_by) if finding.governed_by else None
+                )
+            findings.append(payload)
 
-        return {
+        report: dict[str, Any] = {
             "report_version": self.report_version,
             "target": self.target,
             "score": self.score,
@@ -250,6 +271,16 @@ class AuditReport:
             "draft_available": self.draft_available,
             "packs_suggested": list(self.packs_suggested),
         }
+        if governed_fields:
+            report["raw_score"] = (
+                self.raw_score if self.raw_score is not None else self.score
+            )
+            report["raw_band"] = self.raw_band or self.band
+            report["raw_load"] = (
+                self.raw_load if self.raw_load is not None else 0.0
+            )
+            report["governed_count"] = self.governed_count
+        return report
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=2, ensure_ascii=False)
@@ -413,7 +444,7 @@ def _quarantine_findings(
     """
     quarantine_all = _is_fixture_target(target)
     return [
-        replace(finding, scored=False)
+        replace(finding, scored=False, scoring_reason="quarantined")
         if quarantine_all or _is_fixture_path(finding.path)
         else finding
         for finding in findings
@@ -554,8 +585,21 @@ def scan_tree(target: Path) -> AuditReport:
         )
     )
 
+    findings, governed = resolve_governed(findings, target_path)
+
     scored_findings = [finding for finding in findings if finding.scored]
-    score = max(0, 100 - math.ceil(_total_load(scored_findings)))
+    scored_load = _total_load(scored_findings)
+    score = max(0, 100 - math.ceil(scored_load))
+
+    # The raw number counts every finding governance did not already quarantine,
+    # including governed ones. It is the reviewer's escape hatch, never a gate.
+    raw_findings = [
+        finding
+        for finding in findings
+        if finding.scoring_reason != "quarantined"
+    ]
+    raw_load = _total_load(raw_findings)
+    raw_score = max(0, 100 - math.ceil(raw_load))
 
     severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
     for finding in scored_findings:
@@ -582,6 +626,11 @@ def scan_tree(target: Path) -> AuditReport:
             }
         ),
         governance=_governance_status(target_path),
+        contract_path=governed.contract_path,
+        raw_score=raw_score,
+        raw_band=_band_for_score(raw_score),
+        raw_load=round(raw_load, 2),
+        governed_count=governed.governed_count,
     )
 
 

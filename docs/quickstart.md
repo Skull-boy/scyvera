@@ -62,9 +62,10 @@ One GitHub Actions step:
 - run: scyvera audit . --fail-under 90
 ```
 
-Pick the floor you can defend. This repository pins `--fail-under 84` because its own npm publish
-workflow is a declared and approved capability, not a hidden one
-([RFC 0004 Amendment 1](../rfcs/0004-amendment-1-dogfood-declared-capability.md)).
+Pick the floor you can defend. This repository pins `--fail-under 92`; its npm and crates.io publish
+workflows are declared and approved capabilities, so they are **governed, not waived**: the report
+shows `92/100 (Shielded)` with `raw 82/100 (Controlled)`, and the raw number still counts them
+([RFC 0004 Amendment 2](../rfcs/0004-amendment-2-governed-findings.md)).
 
 ## 4. Adopt the boundary it found
 

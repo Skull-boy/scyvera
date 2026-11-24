@@ -1,0 +1,94 @@
+# Trust-surface ledger (RFC 0004 Amendment 2 §7)
+#
+# One entry per way this repository can affect the outside world. The ledger is
+# the static companion to the audit report: the report says a finding was
+# governed; this file says which workflow, which credential, which approval, and
+# what evidence.
+#
+# `tests/test_trust_surfaces.py` enforces three properties:
+#   1. every publish command the audit matcher finds under .github/workflows/**
+#      resolves to exactly one entry here;
+#   2. every governed, approval-bearing entry's capability is declared in the
+#      root contract.yaml with `required: true`;
+#   3. the set of `status: gap` entries is pinned in the test.
+#
+# `capability: none` is an explicit sentinel for a surface that is read-only by
+# construction: it holds no credential and exposes no write path, so there is no
+# capability an approval could govern. A governed entry with that sentinel must
+# carry `credential: none` and `approval: none`, which the test asserts.
+version: 1
+surfaces:
+  - id: npm-publish
+    capability: registry:publish
+    resource: npm_registry
+    trigger: GitHub Release published, or manual workflow_dispatch (dry-run by default)
+    workflow_or_entrypoint: .github/workflows/publish-scyvera-ts.yml
+    credential: oidc
+    approval: "environment npm-production (required reviewer) + npm staged-publish 2FA"
+    evidence: "run 44903629650 (scyvera-ts 0.1.1, provenance naming refs/tags/scyvera-ts-v0.1.1)"
+    status: governed
+
+  - id: crates-publish
+    capability: registry:publish
+    resource: crates_io_registry
+    trigger: GitHub Release published, or manual workflow_dispatch (dry-run by default)
+    workflow_or_entrypoint: .github/workflows/publish-scyvera-rs.yml
+    credential: oidc
+    approval: "environment crates-io-production (required reviewer); crates.io trustpub_only is enabled"
+    evidence: "run 45251923718 (scyvera-rs 0.1.1; .crate SHA-256 818cf035a3346dede6b4806dfb3ae0eba0ab3a4313aa2a63a5831f454624a133)"
+    status: governed
+
+  - id: pypi-publish
+    capability: registry:publish
+    resource: pypi_registry
+    trigger: push of a v* tag
+    workflow_or_entrypoint: .github/workflows/publish-pypi.yml
+    credential: oidc
+    approval: "none - the `pypi` environment has no protection rules and `pypi_registry` is not declared in contract.yaml"
+    evidence: "no gated run; the workflow has no required reviewer to record"
+    status: gap
+    gap_ref: "M4.5 (declare and gate the PyPI publish surface)"
+
+  - id: scyvera-gate-action
+    capability: none
+    resource: none
+    trigger: workflow step in a consuming repository
+    workflow_or_entrypoint: .github/actions/scyvera-gate/action.yml
+    credential: none
+    approval: none
+    evidence: "composite action; runs `scyvera audit`/`check` read-only and writes no registry"
+    status: governed
+    notes: read-only by construction; the action cannot publish or mutate
+
+  - id: mcp-server
+    capability: none
+    resource: none
+    trigger: host spawns `scyvera serve-mcp`
+    workflow_or_entrypoint: src/scyvera/mcp_server.py
+    credential: none
+    approval: none
+    evidence: "five tools; audit/check/self-check/packages are read-only, no process or network surface"
+    status: governed
+    notes: read-only by construction; refusal and tool errors are JSON-RPC frames on stderr/stdout
+
+  - id: harness-skill
+    capability: none
+    resource: none
+    trigger: host discovers skills/scyvera-governance/SKILL.md
+    workflow_or_entrypoint: skills/scyvera-governance/SKILL.md
+    credential: none
+    approval: none
+    evidence: "hash-locked by skills-registry.json; teaches CLI/MCP use, holds no authority"
+    status: governed
+    notes: read-only by construction; the skill cannot lower a severity or pass a gate
+
+  - id: self-check
+    capability: none
+    resource: none
+    trigger: "scyvera self-check (manual or release attestation)"
+    workflow_or_entrypoint: src/scyvera/selfcheck.py
+    credential: none
+    approval: none
+    evidence: "verifies installed files against the signed manifest; performs no network or write"
+    status: governed
+    notes: read-only by construction; it observes an install, it does not update one

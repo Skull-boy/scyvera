@@ -72,7 +72,7 @@ The minimum bar before opening a PR:
 
 ```bash
 pytest tests/ -q
-scyvera audit . --fail-under 84   # RFC 0004 Amendment 1 covenant floor
+scyvera audit . --fail-under 92   # RFC 0004 Amendment 1 covenant floor
 scyvera self-check            # optional locally; see the manifest note below
 ```
 
@@ -193,7 +193,7 @@ Docs are part of the product. When behavior changes, update the affected page in
 Before opening a pull request, confirm:
 
 - [ ] `pytest tests/ -q` passes locally on at least one OS.
-- [ ] `scyvera audit . --fail-under 84` exits `0` (the dogfood covenant floor, [RFC 0004 Amendment 1](./rfcs/0004-amendment-1-dogfood-declared-capability.md)).
+- [ ] `scyvera audit . --fail-under 92` exits `0` (the dogfood covenant floor, [RFC 0004 Amendment 1](./rfcs/0004-amendment-1-dogfood-declared-capability.md)).
 - [ ] New CLI behavior has tests for `0`, `1`, and `2` exit codes.
 - [ ] Engines print nothing and write nothing to the scanned tree.
 - [ ] Serialized/hashed artifacts are deterministic (sorted, timestamp-free).
