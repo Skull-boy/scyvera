@@ -84,6 +84,21 @@ def test_noisy_and_governed_profiles_exercise_the_rules(tmp_path: Path) -> None:
     )
 
 
+def test_generator_source_is_not_itself_a_finding() -> None:
+    """The corpus triggers the rules; the committed generator must not.
+
+    Both scanners read this file: AU-SECRET-001 / AU-NET-002 scan the tree that
+    contains it, and secret scanners read the diff. Committing the joined
+    payloads cost the dogfood covenant 9 points once (92 -> 83), so the source
+    is asserted clean here as well as by tests/test_audit_dogfood.py.
+    """
+    report = scan_tree(REPO / "benchmarks")
+    assert not report.findings, [
+        f"{finding.rule_id} at {finding.path}:{finding.line}"
+        for finding in report.findings
+    ]
+
+
 def test_generator_refuses_to_write_inside_the_repository(tmp_path: Path) -> None:
     with pytest.raises(gen_corpus.CorpusLocationError):
         gen_corpus.generate(REPO / "benchmarks" / "corpus-should-not-exist", 20, "clean", 1)
