@@ -13,13 +13,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import subprocess
-import sys
 import time
 
 import pytest
 
 from benchmarks import gen_corpus, render, run
-from scyvera.audit import MAX_FILE_BYTES, SKIP_DIRS, scan_tree
+from scyvera.audit import MAX_FILE_BYTES, scan_tree
 from scyvera.audit_rules import RULES
 
 REPO = Path(__file__).resolve().parent.parent
@@ -128,6 +127,80 @@ def test_run_smoke_verifies_the_scan_and_is_byte_identical(tmp_path: Path) -> No
     assert stored["cells"][0]["status"] == "measured"
     assert stored["environment"]["repeats"] == 2
     assert stored["protocol"]["headline"] == "median"
+
+
+def test_budget_stop_records_every_remaining_scale(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A ladder stop must leave a cell for every scale that was requested.
+
+    The rendered table and the result JSON are the published evidence; a scale
+    that stopped the run may not disappear from either. Only the two smallest
+    cells are measured here, the rest must be recorded as ``ladder_stopped``.
+    """
+    measured: list[int] = []
+
+    def fake_measure_cell(
+        profile: str,
+        files: int,
+        seed: int,
+        repeats: int,
+        scan_repeats: int,
+        budget_seconds: float,
+        work_root: Path,
+        *,
+        keep: bool,
+    ) -> dict[str, object]:
+        measured.append(files)
+        if files >= 5000:
+            return {
+                "profile": profile,
+                "files": files,
+                "status": "not_measured",
+                "reason": "budget_exceeded",
+                "detail": "one warm-up run took 900000 ms; 13 runs project to 11700 s",
+            }
+        return {
+            "profile": profile,
+            "files": files,
+            "status": "measured",
+            "files_scanned": files - 10,
+            "files_skipped": 10,
+            "bytes_scanned": 2 * 1024 * 1024,
+            "findings": 3,
+            "end_to_end_ms": {"median": 100.0, "p95": 150.0},
+            "scan_ms": {"median": 50.0},
+            "peak_rss_mb": {"median": 40.0},
+        }
+
+    monkeypatch.setattr(run, "measure_cell", fake_measure_cell)
+    result = run.run(
+        scales=[50000, 1000, 10000, 5000],
+        profiles=["clean"],
+        repeats=1,
+        scan_repeats=1,
+        budget_seconds=1200,
+        seed=1,
+    )
+
+    assert result["scales_requested"] == [1000, 5000, 10000, 50000]
+    assert result["profiles_requested"] == ["clean"]
+    assert measured == [1000, 5000], "the ladder must stop at the failing cell"
+
+    cells = result["cells"]
+    assert [cell["files"] for cell in cells] == [1000, 5000, 10000, 50000]
+    stopping, stopped = cells[1], cells[2:]
+    assert stopping["status"] == "not_measured"
+    assert stopping["reason"] == "budget_exceeded"
+    for cell in stopped:
+        assert cell["status"] == "not_measured"
+        assert cell["reason"] == "ladder_stopped"
+        assert "5,000-file cell stopped the ladder (budget_exceeded)" in cell["detail"]
+        assert "no corpus was generated" in cell["detail"]
+
+    markdown = render.render_markdown(result)
+    assert "| 10,000 | clean | — | — | — | — | not measured |" in markdown
+    assert "`clean` at 50,000 files — ladder_stopped" in markdown
 
 
 FIXTURE = {

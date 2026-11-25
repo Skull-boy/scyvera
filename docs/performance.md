@@ -89,6 +89,10 @@ measured in ascending order with a **1,200-second budget per cell**.
   basis, and **no corpus is generated for it**.
 - If a cell's own warm-up projects over budget, it is also recorded as
   `not_measured` with that fact.
+- A cell that stops (warm-up over budget) ends that profile's ladder. Every
+  larger requested scale is then recorded as `not_measured` with reason
+  `ladder_stopped`, naming the cell that stopped it and that cell's reason. No
+  corpus is generated for those scales, and they still appear in the table.
 - Missing rows are published in the table. They are not dropped, and they are
   not interpolated into a number.
 
@@ -132,8 +136,9 @@ measurement exists.
 - **Synthetic corpora** — the mix is stated above. Real repositories differ in
   file size distribution, extension mix, and encoding; this page does not claim
   to predict them.
-- **Budget stops are data** — any `not measured` row states the projection and
-  its basis. It is not an implied pass.
+- **Budget stops are data** — any `not measured` row states its basis: the
+  projection formula, the warm-up overrun, or the ladder stop that ended the run
+  above it. It is not an implied pass.
 
 ## Reproduce
 

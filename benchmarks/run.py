@@ -580,6 +580,8 @@ def run(
     environment = collect_environment(repeats, scan_repeats)
     result: dict[str, object] = {
         "schema": SCHEMA_VERSION,
+        "profiles_requested": list(profiles),
+        "scales_requested": sorted(scales),
         "environment": environment,
         "protocol": {
             "warmup_runs": 1,
@@ -596,9 +598,10 @@ def run(
     }
 
     try:
+        ordered_scales = sorted(scales)
         for profile in profiles:
             last_measured: dict[str, object] | None = None
-            for files in sorted(scales):
+            for index, files in enumerate(ordered_scales):
                 projected = None
                 if last_measured is not None:
                     previous_files = int(last_measured["files"])
@@ -644,7 +647,24 @@ def run(
                     last_measured = cell
                 else:
                     # A budget stop ends this profile's ladder: smaller cells are
-                    # already measured, larger ones would only project higher.
+                    # already measured, larger ones would only project higher. The
+                    # remaining scales still get a cell, so the gap is published
+                    # rather than silently absent from the table and the result.
+                    stop_reason = str(cell.get("reason", "unknown"))
+                    for remaining in ordered_scales[index + 1:]:
+                        result["cells"].append(  # type: ignore[union-attr]
+                            {
+                                "profile": profile,
+                                "files": remaining,
+                                "status": "not_measured",
+                                "reason": "ladder_stopped",
+                                "detail": (
+                                    f"not attempted: the {files:,}-file cell stopped "
+                                    f"the ladder ({stop_reason}); larger cells would "
+                                    "only project higher, so no corpus was generated"
+                                ),
+                            }
+                        )
                     break
     finally:
         if not keep:
