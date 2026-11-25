@@ -83,6 +83,10 @@ finding that the repository's own contract declares and approves. That is a prod
 approved capabilities (governed findings)*. Until that ships, 84/100 `Controlled` is the correct
 number and the covenant above is the correct gate.
 
+**Status:** shipped 2026-11-24 as
+[Amendment 2](./0004-amendment-2-governed-findings.md); see §6 for the new
+numbers.
+
 ---
 
 ## 6. Amendment 2 shipped (2026-11-24)

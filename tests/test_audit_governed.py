@@ -8,11 +8,16 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 
 import pytest
 
 from scyvera.audit import scan_tree
 from scyvera.audit_rules import RULES, RULE_PRESCRIPTIONS, prescription_for
+
+#: Phase 1 grammar: ``service:scope`` with no wildcards. A wildcard permission is
+#: an invalid contract (Threat T7), so it can never be the thing that governs.
+PERMISSION_GRAMMAR = re.compile(r"^[a-zA-Z0-9_\-]+:[a-zA-Z0-9_\-:]+$")
 
 WORKFLOW = "name: publish\njobs:\n  publish:\n    steps:\n      - run: npm publish --access public\n"
 
@@ -184,6 +189,24 @@ def test_only_capability_rules_are_governable() -> None:
         "AU-DEP-001",
     ):
         assert RULE_PRESCRIPTIONS[rule_id] is None
+
+
+def test_prescription_permissions_follow_the_grammar() -> None:
+    """A prescription names one concrete ``service:scope``, never a wildcard."""
+    prescribed = [
+        prescription
+        for prescription in RULE_PRESCRIPTIONS.values()
+        if prescription is not None
+    ]
+    assert prescribed, "no rule prescribes a capability; the registry is wrong"
+
+    for prescription in prescribed:
+        permission = prescription.permission
+        assert PERMISSION_GRAMMAR.match(permission), (
+            f"{permission!r} does not match service:scope"
+        )
+        assert "*" not in permission
+        assert permission.lower() not in {"all", "any", "none"}
 
 
 def test_resource_is_chosen_per_command() -> None:
