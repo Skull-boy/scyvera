@@ -56,3 +56,7 @@ test.wav
 
 # Downloaded registry artifacts kept for digest comparison
 /runtimes/rs/*.crate
+
+# PD-5 benchmark scratch corpora (generated at run time, never committed)
+/benchmarks/corpus/
+
